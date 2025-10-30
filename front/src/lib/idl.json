@@ -1,0 +1,3147 @@
+{
+  "address": "EgEc7fuse6eQ3UwqeWGFncDtbTwozWCy4piydbeRaNrU",
+  "metadata": {
+    "name": "prediction_market",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "docs": [
+    "预测市场程序主模块"
+  ],
+  "instructions": [
+    {
+      "name": "accept_authority",
+      "docs": [
+        "接受管理员角色",
+        "",
+        "被提名的管理员调用此函数来接受管理员角色",
+        "只有在被提名后才能调用此函数",
+        "",
+        "# 参数",
+        "* `ctx` - 指令上下文",
+        "",
+        "# 返回",
+        "* `Result<()>` - 操作结果"
+      ],
+      "discriminator": [
+        107,
+        86,
+        198,
+        91,
+        33,
+        12,
+        107,
+        160
+      ],
+      "accounts": [
+        {
+          "name": "new_admin",
+          "docs": [
+            "待接受管理员（必须与全局配置中 pending_authority 一致）"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "global_config",
+          "docs": [
+            "全局配置（存储当前/待定管理员）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "add_liquidity",
+      "docs": [
+        "添加流动性",
+        "",
+        "用户可以向市场添加流动性，成为流动性提供者（LP）",
+        "LP可以获得交易手续费分成",
+        "",
+        "# 参数",
+        "* `ctx` - 指令上下文",
+        "* `amount` - 添加的SOL数量",
+        "",
+        "# 返回",
+        "* `Result<()>` - 操作结果"
+      ],
+      "discriminator": [
+        181,
+        157,
+        89,
+        67,
+        143,
+        182,
+        52,
+        72
+      ],
+      "accounts": [
+        {
+          "name": "global_config",
+          "docs": [
+            "全局配置"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "team_wallet",
+          "docs": [
+            "团队钱包（需与配置一致，用于收取平台费）"
+          ],
+          "writable": true
+        },
+        {
+          "name": "market",
+          "docs": [
+            "市场账户（以YES/NO mint作为种子）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "yes_token"
+              },
+              {
+                "kind": "account",
+                "path": "no_token"
+              }
+            ]
+          }
+        },
+        {
+          "name": "global_vault",
+          "docs": [
+            "全局金库（存放SOL）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "yes_token",
+          "docs": [
+            "YES/NO 代币mint"
+          ]
+        },
+        {
+          "name": "no_token"
+        },
+        {
+          "name": "user_info",
+          "docs": [
+            "用户信息（按需初始化）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  105,
+                  110,
+                  102,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user",
+          "docs": [
+            "用户签名者"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "系统/代币/ATA程序"
+          ],
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "configure",
+      "docs": [
+        "配置全局设置",
+        "",
+        "由管理员调用，用于设置全局配置参数",
+        "需要验证调用者是否为授权管理员",
+        "",
+        "# 参数",
+        "* `ctx` - 指令上下文",
+        "* `new_config` - 新的配置参数",
+        "",
+        "# 返回",
+        "* `Result<()>` - 操作结果"
+      ],
+      "discriminator": [
+        245,
+        7,
+        108,
+        117,
+        95,
+        196,
+        54,
+        217
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "docs": [
+            "付费者/管理员"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "docs": [
+            "配置PDA（内部完成初始化/扩容/写入）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "global_vault",
+          "docs": [
+            "全局金库（PDA，存放SOL）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "系统程序"
+          ],
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "docs": [
+            "代币程序"
+          ],
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "docs": [
+            "关联代币账户程序"
+          ],
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        }
+      ],
+      "args": [
+        {
+          "name": "new_config",
+          "type": {
+            "defined": {
+              "name": "Config"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "create_market",
+      "docs": [
+        "创建预测市场",
+        "",
+        "创建一个新的预测市场，包括YES代币的铸造",
+        "市场创建者需要提供市场的基本信息",
+        "",
+        "# 参数",
+        "* `ctx` - 指令上下文",
+        "* `params` - 创建市场的参数",
+        "",
+        "# 返回",
+        "* `Result<()>` - 操作结果"
+      ],
+      "discriminator": [
+        103,
+        226,
+        97,
+        235,
+        200,
+        188,
+        251,
+        254
+      ],
+      "accounts": [
+        {
+          "name": "global_config",
+          "docs": [
+            "全局配置"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "global_vault",
+          "docs": [
+            "全局金库（PDA，存放SOL）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "creator",
+          "docs": [
+            "创建者"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "yes_token",
+          "docs": [
+            "YES代币mint（由全局金库作为mint authority）"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "no_token",
+          "docs": [
+            "NO代币mint（需在mint_no_token指令中创建）"
+          ]
+        },
+        {
+          "name": "market",
+          "docs": [
+            "市场账户（以YES/NO mint作为种子）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "yes_token"
+              },
+              {
+                "kind": "account",
+                "path": "no_token"
+              }
+            ]
+          }
+        },
+        {
+          "name": "yes_token_metadata_account",
+          "docs": [
+            "YES元数据账户（传递给 Metadata 程序）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  11,
+                  112,
+                  101,
+                  177,
+                  227,
+                  209,
+                  124,
+                  69,
+                  56,
+                  157,
+                  82,
+                  127,
+                  107,
+                  4,
+                  195,
+                  205,
+                  88,
+                  184,
+                  108,
+                  115,
+                  26,
+                  160,
+                  253,
+                  181,
+                  73,
+                  182,
+                  209,
+                  188,
+                  3,
+                  248,
+                  41,
+                  70
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "yes_token"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                11,
+                112,
+                101,
+                177,
+                227,
+                209,
+                124,
+                69,
+                56,
+                157,
+                82,
+                127,
+                107,
+                4,
+                195,
+                205,
+                88,
+                184,
+                108,
+                115,
+                26,
+                160,
+                253,
+                181,
+                73,
+                182,
+                209,
+                188,
+                3,
+                248,
+                41,
+                70
+              ]
+            }
+          }
+        },
+        {
+          "name": "no_token_metadata_account",
+          "docs": [
+            "NO元数据账户（传递给 Metadata 程序）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  11,
+                  112,
+                  101,
+                  177,
+                  227,
+                  209,
+                  124,
+                  69,
+                  56,
+                  157,
+                  82,
+                  127,
+                  107,
+                  4,
+                  195,
+                  205,
+                  88,
+                  184,
+                  108,
+                  115,
+                  26,
+                  160,
+                  253,
+                  181,
+                  73,
+                  182,
+                  209,
+                  188,
+                  3,
+                  248,
+                  41,
+                  70
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "no_token"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                11,
+                112,
+                101,
+                177,
+                227,
+                209,
+                124,
+                69,
+                56,
+                157,
+                82,
+                127,
+                107,
+                4,
+                195,
+                205,
+                88,
+                184,
+                108,
+                115,
+                26,
+                160,
+                253,
+                181,
+                73,
+                182,
+                209,
+                188,
+                3,
+                248,
+                41,
+                70
+              ]
+            }
+          }
+        },
+        {
+          "name": "global_yes_token_account",
+          "docs": [
+            "全局金库的YES ATA（在指令中创建）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "global_vault"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "yes_token"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "系统/租金/代币/ATA/元数据程序"
+          ],
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "mpl_token_metadata_program",
+          "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+        },
+        {
+          "name": "team_wallet",
+          "docs": [
+            "团队钱包（需与配置一致）"
+          ],
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "CreateMarketParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "mint_no_token",
+      "docs": [
+        "铸造NO代币",
+        "",
+        "为预测市场创建NO代币（表示\"不同意\"的代币）",
+        "每个市场都需要一对YES和NO代币",
+        "",
+        "# 参数",
+        "* `ctx` - 指令上下文",
+        "* `no_symbol` - NO代币的符号",
+        "* `no_uri` - NO代币的元数据URI",
+        "",
+        "# 返回",
+        "* `Result<()>` - 操作结果"
+      ],
+      "discriminator": [
+        198,
+        161,
+        208,
+        188,
+        122,
+        69,
+        236,
+        128
+      ],
+      "accounts": [
+        {
+          "name": "global_config",
+          "docs": [
+            "全局配置"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "global_vault",
+          "docs": [
+            "全局金库（PDA，作为铸造与更新权限）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "creator",
+          "docs": [
+            "创建者"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "no_token",
+          "docs": [
+            "NO代币mint（由全局金库作为mint authority）"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "no_token_metadata_account",
+          "docs": [
+            "NO元数据账户（传递给 Metadata 程序）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "const",
+                "value": [
+                  11,
+                  112,
+                  101,
+                  177,
+                  227,
+                  209,
+                  124,
+                  69,
+                  56,
+                  157,
+                  82,
+                  127,
+                  107,
+                  4,
+                  195,
+                  205,
+                  88,
+                  184,
+                  108,
+                  115,
+                  26,
+                  160,
+                  253,
+                  181,
+                  73,
+                  182,
+                  209,
+                  188,
+                  3,
+                  248,
+                  41,
+                  70
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "no_token"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                11,
+                112,
+                101,
+                177,
+                227,
+                209,
+                124,
+                69,
+                56,
+                157,
+                82,
+                127,
+                107,
+                4,
+                195,
+                205,
+                88,
+                184,
+                108,
+                115,
+                26,
+                160,
+                253,
+                181,
+                73,
+                182,
+                209,
+                188,
+                3,
+                248,
+                41,
+                70
+              ]
+            }
+          }
+        },
+        {
+          "name": "global_no_token_account",
+          "docs": [
+            "全局金库的NO ATA（在指令中创建）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "global_vault"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "no_token"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "系统/租金/代币/ATA/元数据程序"
+          ],
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "mpl_token_metadata_program",
+          "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+        }
+      ],
+      "args": [
+        {
+          "name": "no_symbol",
+          "type": "string"
+        },
+        {
+          "name": "no_uri",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "nominate_authority",
+      "docs": [
+        "提名新的管理员",
+        "",
+        "当前管理员可以将管理员角色转移给其他账户",
+        "这是一个两步过程，需要新管理员接受才能完成转移",
+        "",
+        "# 参数",
+        "* `ctx` - 指令上下文",
+        "* `new_admin` - 新管理员的公钥",
+        "",
+        "# 返回",
+        "* `Result<()>` - 操作结果"
+      ],
+      "discriminator": [
+        148,
+        182,
+        144,
+        91,
+        186,
+        12,
+        118,
+        18
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "docs": [
+            "当前管理员（必须与全局配置中的 authority 匹配）"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "global_config",
+          "docs": [
+            "全局配置（写入 pending_authority）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "new_admin",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "resolution",
+      "docs": [
+        "市场结算",
+        "",
+        "由管理员调用，用于结算预测市场的结果",
+        "根据实际结果分配奖励给持有正确代币的用户",
+        "",
+        "# 参数",
+        "* `ctx` - 指令上下文",
+        "* `yes_amount` - YES代币的奖励数量",
+        "* `no_amount` - NO代币的奖励数量",
+        "* `token_type` - 获胜的代币类型",
+        "* `is_completed` - 市场是否完成",
+        "",
+        "# 返回",
+        "* `Result<()>` - 操作结果"
+      ],
+      "discriminator": [
+        149,
+        113,
+        222,
+        19,
+        243,
+        191,
+        14,
+        10
+      ],
+      "accounts": [
+        {
+          "name": "global_config",
+          "docs": [
+            "全局配置"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "docs": [
+            "市场账户"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "yes_token"
+              },
+              {
+                "kind": "account",
+                "path": "no_token"
+              }
+            ]
+          }
+        },
+        {
+          "name": "global_vault",
+          "docs": [
+            "全局金库（PDA，存放SOL）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "yes_token",
+          "docs": [
+            "YES/NO 代币mint"
+          ]
+        },
+        {
+          "name": "no_token"
+        },
+        {
+          "name": "user_info",
+          "docs": [
+            "用户信息（领取奖励时用）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  105,
+                  110,
+                  102,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user",
+          "docs": [
+            "用户（用于接收奖励等场景）"
+          ],
+          "writable": true
+        },
+        {
+          "name": "authority",
+          "docs": [
+            "管理员（必须为全局authority）"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "系统/代币/ATA程序"
+          ],
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        }
+      ],
+      "args": [
+        {
+          "name": "yes_amount",
+          "type": "u64"
+        },
+        {
+          "name": "no_amount",
+          "type": "u64"
+        },
+        {
+          "name": "token_type",
+          "type": "u8"
+        },
+        {
+          "name": "is_completed",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "swap",
+      "docs": [
+        "交易代币",
+        "",
+        "在预测市场中买卖YES或NO代币",
+        "使用AMM（自动做市商）机制进行价格发现",
+        "",
+        "# 参数",
+        "* `ctx` - 指令上下文",
+        "* `amount` - 交易数量",
+        "* `direction` - 交易方向（0=买入，1=卖出）",
+        "* `token_type` - 代币类型（0=YES，1=NO）",
+        "* `minimum_receive_amount` - 最小接收数量（滑点保护）",
+        "",
+        "# 返回",
+        "* `Result<()>` - 操作结果"
+      ],
+      "discriminator": [
+        248,
+        198,
+        158,
+        145,
+        225,
+        117,
+        135,
+        200
+      ],
+      "accounts": [
+        {
+          "name": "global_config",
+          "docs": [
+            "全局配置"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "team_wallet",
+          "docs": [
+            "团队钱包（收取平台费，需与配置一致）"
+          ],
+          "writable": true
+        },
+        {
+          "name": "market",
+          "docs": [
+            "市场账户"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "yes_token"
+              },
+              {
+                "kind": "account",
+                "path": "no_token"
+              }
+            ]
+          }
+        },
+        {
+          "name": "global_vault",
+          "docs": [
+            "全局金库（PDA，存放SOL）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "yes_token",
+          "docs": [
+            "YES/NO 代币mint"
+          ]
+        },
+        {
+          "name": "no_token"
+        },
+        {
+          "name": "global_yes_ata",
+          "docs": [
+            "全局金库的YES/NO ATA（按需使用）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "global_vault"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "yes_token"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "global_no_ata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "global_vault"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "no_token"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "user_yes_ata",
+          "docs": [
+            "用户的YES/NO ATA（不存在则创建）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "yes_token"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "user_no_ata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "no_token"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "user_info",
+          "docs": [
+            "用户信息（按需初始化）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  105,
+                  110,
+                  102,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user",
+          "docs": [
+            "用户签名者"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "系统/代币/ATA程序"
+          ],
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "direction",
+          "type": "u8"
+        },
+        {
+          "name": "token_type",
+          "type": "u8"
+        },
+        {
+          "name": "minimum_receive_amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "withdraw_liquidity",
+      "docs": [
+        "提取流动性",
+        "",
+        "流动性提供者可以提取之前添加的流动性",
+        "只能提取自己添加的流动性",
+        "",
+        "# 参数",
+        "* `ctx` - 指令上下文",
+        "* `amount` - 提取的SOL数量",
+        "",
+        "# 返回",
+        "* `Result<()>` - 操作结果"
+      ],
+      "discriminator": [
+        149,
+        158,
+        33,
+        185,
+        47,
+        243,
+        253,
+        31
+      ],
+      "accounts": [
+        {
+          "name": "global_config",
+          "docs": [
+            "全局配置"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "team_wallet",
+          "docs": [
+            "团队钱包（需与配置一致）"
+          ],
+          "writable": true
+        },
+        {
+          "name": "market",
+          "docs": [
+            "市场账户"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "yes_token"
+              },
+              {
+                "kind": "account",
+                "path": "no_token"
+              }
+            ]
+          }
+        },
+        {
+          "name": "global_vault",
+          "docs": [
+            "全局金库（PDA，存放SOL）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  108,
+                  111,
+                  98,
+                  97,
+                  108
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "yes_token",
+          "docs": [
+            "YES/NO 代币mint"
+          ]
+        },
+        {
+          "name": "no_token"
+        },
+        {
+          "name": "user_info",
+          "docs": [
+            "用户信息（需为LP）"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  117,
+                  115,
+                  101,
+                  114,
+                  105,
+                  110,
+                  102,
+                  111
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "user",
+          "docs": [
+            "用户签名者"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "系统/代币/ATA程序"
+          ],
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Config",
+      "discriminator": [
+        155,
+        12,
+        170,
+        224,
+        30,
+        250,
+        204,
+        130
+      ]
+    },
+    {
+      "name": "Market",
+      "discriminator": [
+        219,
+        190,
+        213,
+        55,
+        0,
+        227,
+        198,
+        154
+      ]
+    },
+    {
+      "name": "UserInfo",
+      "discriminator": [
+        83,
+        134,
+        200,
+        56,
+        144,
+        56,
+        10,
+        62
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "CompleteEvent",
+      "discriminator": [
+        95,
+        114,
+        97,
+        156,
+        212,
+        46,
+        152,
+        8
+      ]
+    },
+    {
+      "name": "CreateEvent",
+      "discriminator": [
+        27,
+        114,
+        169,
+        77,
+        222,
+        235,
+        99,
+        118
+      ]
+    },
+    {
+      "name": "GlobalUpdateEvent",
+      "discriminator": [
+        153,
+        69,
+        19,
+        7,
+        115,
+        232,
+        248,
+        248
+      ]
+    },
+    {
+      "name": "TradeEvent",
+      "discriminator": [
+        189,
+        219,
+        127,
+        211,
+        78,
+        230,
+        97,
+        238
+      ]
+    },
+    {
+      "name": "WithdrawEvent",
+      "discriminator": [
+        22,
+        9,
+        133,
+        26,
+        160,
+        44,
+        71,
+        192
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "ValueTooSmall",
+      "msg": "ValueTooSmall"
+    },
+    {
+      "code": 6001,
+      "name": "ValueTooLarge",
+      "msg": "ValueTooLarge"
+    },
+    {
+      "code": 6002,
+      "name": "ValueInvalid",
+      "msg": "ValueInvalid"
+    },
+    {
+      "code": 6003,
+      "name": "IncorrectConfigAccount",
+      "msg": "IncorrectConfigAccount"
+    },
+    {
+      "code": 6004,
+      "name": "IncorrectAuthority",
+      "msg": "IncorrectAuthority"
+    },
+    {
+      "code": 6005,
+      "name": "OverflowOrUnderflowOccurred",
+      "msg": "Overflow or underflow occured"
+    },
+    {
+      "code": 6006,
+      "name": "InvalidAmount",
+      "msg": "Amount is invalid"
+    },
+    {
+      "code": 6007,
+      "name": "IncorrectTeamWallet",
+      "msg": "Incorrect team wallet address"
+    },
+    {
+      "code": 6008,
+      "name": "CurveNotCompleted",
+      "msg": "Curve is not completed"
+    },
+    {
+      "code": 6009,
+      "name": "CurveAlreadyCompleted",
+      "msg": "Can not swap after the curve is completed"
+    },
+    {
+      "code": 6010,
+      "name": "MintAuthorityEnabled",
+      "msg": "Mint authority should be revoked"
+    },
+    {
+      "code": 6011,
+      "name": "FreezeAuthorityEnabled",
+      "msg": "Freeze authority should be revoked"
+    },
+    {
+      "code": 6012,
+      "name": "ReturnAmountTooSmall",
+      "msg": "Return amount is too small compared to the minimum received amount"
+    },
+    {
+      "code": 6013,
+      "name": "AmmAlreadyExists",
+      "msg": "AMM is already exist"
+    },
+    {
+      "code": 6014,
+      "name": "NotInitialized",
+      "msg": "Global Not Initialized"
+    },
+    {
+      "code": 6015,
+      "name": "InvalidGlobalAuthority",
+      "msg": "Invalid Global Authority"
+    },
+    {
+      "code": 6016,
+      "name": "NotWhiteList",
+      "msg": "This creator is not in whitelist"
+    },
+    {
+      "code": 6017,
+      "name": "IncorrectLaunchPhase",
+      "msg": "IncorrectLaunchPhase"
+    },
+    {
+      "code": 6018,
+      "name": "InsufficientTokens",
+      "msg": "Not enough tokens to complete the sell order."
+    },
+    {
+      "code": 6019,
+      "name": "InsufficientSol",
+      "msg": "Not enough SOL received to be valid."
+    },
+    {
+      "code": 6020,
+      "name": "SellFailed",
+      "msg": "Sell Failed"
+    },
+    {
+      "code": 6021,
+      "name": "BuyFailed",
+      "msg": "Buy Failed"
+    },
+    {
+      "code": 6022,
+      "name": "NotBondingCurveMint",
+      "msg": "This token is not a bonding curve token"
+    },
+    {
+      "code": 6023,
+      "name": "NotSOL",
+      "msg": "Not quote mint"
+    },
+    {
+      "code": 6024,
+      "name": "InvalidMigrationAuthority",
+      "msg": "Invalid Migration Authority"
+    },
+    {
+      "code": 6025,
+      "name": "NotCompleted",
+      "msg": "Bonding curve is not completed"
+    },
+    {
+      "code": 6026,
+      "name": "InvalidMeteoraProgram",
+      "msg": "Invalid Meteora Program"
+    },
+    {
+      "code": 6027,
+      "name": "ArithmeticError",
+      "msg": "Arithmetic Error"
+    },
+    {
+      "code": 6028,
+      "name": "InvalidParameter",
+      "msg": "Invalid Parameter"
+    },
+    {
+      "code": 6029,
+      "name": "InvalidStartTime",
+      "msg": "Start time is in the past"
+    },
+    {
+      "code": 6030,
+      "name": "InvalidEndTime",
+      "msg": "End time is in the past"
+    },
+    {
+      "code": 6031,
+      "name": "AlreadyInitialized",
+      "msg": "Global Already Initialized"
+    },
+    {
+      "code": 6032,
+      "name": "InvalidAuthority",
+      "msg": "Invalid Authority"
+    },
+    {
+      "code": 6033,
+      "name": "InvalidArgument",
+      "msg": "Invalid Argument"
+    },
+    {
+      "code": 6034,
+      "name": "MarketNotCompleted",
+      "msg": "The market has already ended."
+    },
+    {
+      "code": 6035,
+      "name": "MarketIsCompleted",
+      "msg": "The market already ended."
+    },
+    {
+      "code": 6036,
+      "name": "RESOLUTIONTOKEYTYPEERROR",
+      "msg": "The winner token type error."
+    },
+    {
+      "code": 6037,
+      "name": "RESOLUTIONYESAMOUNTERROR",
+      "msg": "The winner yes token amount error."
+    },
+    {
+      "code": 6038,
+      "name": "RESOLUTIONNOAMOUNTERROR",
+      "msg": "The winner no token amount error."
+    },
+    {
+      "code": 6039,
+      "name": "WITHDRAWLIQUIDITYSOLAMOUNTERROR",
+      "msg": "The withdraw sol amount error."
+    },
+    {
+      "code": 6040,
+      "name": "WITHDRAWNOTLPERROR",
+      "msg": "The withdraw: not lp error."
+    }
+  ],
+  "types": [
+    {
+      "name": "CompleteEvent",
+      "docs": [
+        "完成事件",
+        "",
+        "当市场完成或曲线完成时发出",
+        "记录最终的状态信息"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "docs": [
+              "操作用户"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "docs": [
+              "代币铸造地址"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "virtual_sol_reserves",
+            "docs": [
+              "虚拟SOL储备"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "virtual_token_reserves",
+            "docs": [
+              "虚拟代币储备"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "real_sol_reserves",
+            "docs": [
+              "真实SOL储备"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "real_token_reserves",
+            "docs": [
+              "真实代币储备"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "docs": [
+              "完成时间戳"
+            ],
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Config",
+      "docs": [
+        "全局配置账户",
+        "",
+        "存储预测市场合约的全局配置参数",
+        "包括管理员权限、手续费设置、代币配置等"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "docs": [
+              "当前管理员公钥"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "pending_authority",
+            "docs": [
+              "待确认的管理员公钥（用于两步权限转移）",
+              "当前管理员提名新管理员后，新管理员需要调用accept_authority来确认"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "team_wallet",
+            "docs": [
+              "团队钱包地址",
+              "用于接收平台手续费"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "platform_buy_fee",
+            "docs": [
+              "平台买入手续费（基点，如1000表示10%）"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "platform_sell_fee",
+            "docs": [
+              "平台卖出手续费（基点，如1000表示10%）"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "lp_buy_fee",
+            "docs": [
+              "流动性提供者买入手续费（基点）"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "lp_sell_fee",
+            "docs": [
+              "流动性提供者卖出手续费（基点）"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "token_supply_config",
+            "docs": [
+              "代币总供应量配置"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "token_decimals_config",
+            "docs": [
+              "代币精度配置"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "initial_real_token_reserves_config",
+            "docs": [
+              "初始真实代币储备配置"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "min_sol_liquidity",
+            "docs": [
+              "最小SOL流动性要求"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "initialized",
+            "docs": [
+              "配置是否已初始化"
+            ],
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CreateEvent",
+      "docs": [
+        "市场创建事件",
+        "",
+        "当新的预测市场被创建时发出",
+        "包含市场的基本信息和代币配置"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "creator",
+            "docs": [
+              "市场创建者"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "market",
+            "docs": [
+              "市场账户地址"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "token_yes",
+            "docs": [
+              "YES代币地址"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "metadata_yes",
+            "docs": [
+              "YES代币元数据地址"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "token_yes_total_supply",
+            "docs": [
+              "YES代币总供应量"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "real_yes_sol_reserves",
+            "docs": [
+              "YES代币真实SOL储备"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "token_no",
+            "docs": [
+              "NO代币地址"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "metadata_no",
+            "docs": [
+              "NO代币元数据地址"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "token_no_total_supply",
+            "docs": [
+              "NO代币总供应量"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "real_no_sol_reserves",
+            "docs": [
+              "NO代币真实SOL储备"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "start_slot",
+            "docs": [
+              "开始槽位"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "ending_slot",
+            "docs": [
+              "结束槽位"
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CreateMarketParams",
+      "docs": [
+        "创建市场参数"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "yes_symbol",
+            "docs": [
+              "YES代币符号"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "yes_uri",
+            "docs": [
+              "YES代币元数据URI"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "start_slot",
+            "docs": [
+              "开始槽位（可选）"
+            ],
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "ending_slot",
+            "docs": [
+              "结束槽位（可选）"
+            ],
+            "type": {
+              "option": "u64"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "GlobalUpdateEvent",
+      "docs": [
+        "全局更新事件",
+        "",
+        "当全局配置发生更新时发出",
+        "包括管理员变更、代币配置更新等"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "global_authority",
+            "docs": [
+              "全局管理员公钥"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "initial_real_token_reserves",
+            "docs": [
+              "初始真实代币储备"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "token_total_supply",
+            "docs": [
+              "代币总供应量"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "mint_decimals",
+            "docs": [
+              "代币精度"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "LpInfo",
+      "docs": [
+        "流动性提供者信息"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "docs": [
+              "用户公钥"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "sol_amount",
+            "docs": [
+              "初始提供的SOL数量"
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Market",
+      "docs": [
+        "市场账户：存储预测市场的所有状态"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "yes_token_mint",
+            "docs": [
+              "YES代币铸造地址"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "no_token_mint",
+            "docs": [
+              "NO代币铸造地址"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "creator",
+            "docs": [
+              "市场创建者"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "initial_yes_token_reserves",
+            "docs": [
+              "YES代币相关储备"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "real_yes_token_reserves",
+            "type": "u64"
+          },
+          {
+            "name": "real_yes_sol_reserves",
+            "type": "u64"
+          },
+          {
+            "name": "token_yes_total_supply",
+            "type": "u64"
+          },
+          {
+            "name": "initial_no_token_reserves",
+            "docs": [
+              "NO代币相关储备"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "real_no_token_reserves",
+            "type": "u64"
+          },
+          {
+            "name": "real_no_sol_reserves",
+            "type": "u64"
+          },
+          {
+            "name": "token_no_total_supply",
+            "type": "u64"
+          },
+          {
+            "name": "is_completed",
+            "docs": [
+              "市场状态"
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "start_slot",
+            "docs": [
+              "开始槽位（可选）"
+            ],
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "ending_slot",
+            "docs": [
+              "结束槽位（可选）"
+            ],
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "lps",
+            "docs": [
+              "流动性提供者列表"
+            ],
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "LpInfo"
+                }
+              }
+            }
+          },
+          {
+            "name": "total_lp_amount",
+            "docs": [
+              "总流动性数量"
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TradeEvent",
+      "docs": [
+        "交易事件",
+        "",
+        "当用户进行代币交易时发出",
+        "包含交易的详细信息，便于分析和索引"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "docs": [
+              "交易用户"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "token_yes",
+            "docs": [
+              "YES代币地址"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "token_no",
+            "docs": [
+              "NO代币地址"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "market_info",
+            "docs": [
+              "市场信息账户"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "sol_amount",
+            "docs": [
+              "SOL交易数量"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "token_amount",
+            "docs": [
+              "代币交易数量"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "fee_lamports",
+            "docs": [
+              "手续费（lamports）"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "is_buy",
+            "docs": [
+              "是否为买入操作"
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "is_yes_no",
+            "docs": [
+              "是否为YES代币交易"
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "real_sol_reserves",
+            "docs": [
+              "真实SOL储备"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "real_token_yes_reserves",
+            "docs": [
+              "真实YES代币储备"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "real_token_no_reserves",
+            "docs": [
+              "真实NO代币储备"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "docs": [
+              "交易时间戳"
+            ],
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserInfo",
+      "docs": [
+        "用户信息账户：记录用户在特定市场中的状态"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "docs": [
+              "用户公钥"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "yes_balance",
+            "docs": [
+              "持有的YES代币数量"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "no_balance",
+            "docs": [
+              "持有的NO代币数量"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "is_lp",
+            "docs": [
+              "是否为流动性提供者"
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "is_initialized",
+            "docs": [
+              "是否已初始化"
+            ],
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WithdrawEvent",
+      "docs": [
+        "提取事件",
+        "",
+        "当从金库提取资金时发出",
+        "用于记录手续费提取等操作"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "withdraw_authority",
+            "docs": [
+              "提取授权者"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "docs": [
+              "代币铸造地址"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_vault",
+            "docs": [
+              "手续费金库地址"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "withdrawn",
+            "docs": [
+              "本次提取数量"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "total_withdrawn",
+            "docs": [
+              "累计提取数量"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "withdraw_time",
+            "docs": [
+              "提取时间戳"
+            ],
+            "type": "i64"
+          }
+        ]
+      }
+    }
+  ]
+}
