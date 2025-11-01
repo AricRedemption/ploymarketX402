@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { PublicKey } from '@solana/web3.js';
 import { useConnection } from '@solana/wallet-adapter-react';
 import { Market } from '@/lib/solana/types';
-import { fetchAllMarkets, fetchMarket, getAccountCreationTime } from '@/lib/solana/client';
-import { getMarketPDA } from '@/lib/solana/config';
+import { fetchAllMarkets, getAccountCreationTime, fetchTokenMetadata } from '@/lib/solana/client';
 import { useSolanaProgram } from './useSolanaProgram';
+import { getMarketTitle } from '@/lib/marketTitles';
 
 /**
  * Hook to fetch all markets from the blockchain
@@ -47,11 +47,19 @@ export function useMarkets() {
         // Get current slot for end date calculations
         const currentSlot = await connection.getSlot();
 
-        // Fetch creation times for all markets in parallel
-        const creationTimePromises = marketAccounts.map(({ publicKey }) =>
+        // Fetch creation times and metadata for all markets in parallel
+        const creationTimePromises = marketAccounts.map(({ publicKey }: { publicKey: PublicKey }) =>
           getAccountCreationTime(publicKey)
         );
-        const creationTimes = await Promise.all(creationTimePromises);
+
+        const metadataPromises = marketAccounts.map(({ account }: { account: any }) =>
+          account.yesTokenMint ? fetchTokenMetadata(account.yesTokenMint) : Promise.resolve(null)
+        );
+
+        const [creationTimes, metadataList] = await Promise.all([
+          Promise.all(creationTimePromises),
+          Promise.all(metadataPromises)
+        ]);
 
         const parsedMarkets: Market[] = marketAccounts.map((account: any, index: number) => {
           const data = account.account;
@@ -80,27 +88,53 @@ export function useMarkets() {
 
           // Generate market identifier from address
           const marketId = pubkey.toString().slice(0, 8);
+          const marketAddress = pubkey.toString();
 
-          // Generate a descriptive question based on available data
+          // Get token metadata for this market
+          const metadata = metadataList[index];
+
+          // Check if we have a custom title for this market
+          const marketTitleConfig = getMarketTitle(marketAddress);
+
+          // Use configured title if available, otherwise use metadata or generic title
           let question: string;
-          if (hasYesToken && hasNoToken) {
-            // Show short token addresses
-            question = `Binary Prediction Market ${marketId}`;
+          let description: string;
+          let category: string;
+
+          if (marketTitleConfig) {
+            // Use the configured market title
+            question = marketTitleConfig.question;
+            description = marketTitleConfig.description || `Market: ${marketId}`;
+            category = marketTitleConfig.category || 'Crypto';
+          } else if (metadata && metadata.name) {
+            // Use the token metadata name as the market title
+            question = metadata.name.trim();
+
+            // Create description from metadata
+            description = `Market: ${marketId}`;
+            if (hasYesToken && hasNoToken) {
+              description += ` • YES: ${metadata.symbol || yesTokenStr.slice(0, 4)}`;
+            }
+
+            category = 'Crypto';
           } else {
-            question = `Prediction Market ${marketId} (Tokens not initialized)`;
-          }
+            // Generate generic title for markets without configuration or metadata
+            if (hasYesToken && hasNoToken) {
+              question = `Binary Prediction Market ${marketId}`;
+            } else {
+              question = `Prediction Market ${marketId} (Tokens not initialized)`;
+            }
 
-          // Create detailed description with token info
-          let description = `Market: ${pubkey.toString().slice(0, 8)}...${pubkey.toString().slice(-4)}`;
-          if (hasYesToken && hasNoToken) {
-            description += ` • YES: ${yesTokenStr.slice(0, 4)}...${yesTokenStr.slice(-4)}`;
-            description += ` • NO: ${noTokenStr.slice(0, 4)}...${noTokenStr.slice(-4)}`;
-          }
-          description += ` • Supply: ${(data.tokenYesTotalSupply.toNumber() / 1e9).toFixed(0)}B`;
+            // Create detailed description with token info
+            description = `Market: ${marketId}...${pubkey.toString().slice(-4)}`;
+            if (hasYesToken && hasNoToken) {
+              description += ` • YES: ${yesTokenStr.slice(0, 4)}...${yesTokenStr.slice(-4)}`;
+              description += ` • NO: ${noTokenStr.slice(0, 4)}...${noTokenStr.slice(-4)}`;
+            }
+            description += ` • Supply: ${(data.tokenYesTotalSupply.toNumber() / 1e9).toFixed(0)}B`;
 
-          // Determine category based on market characteristics
-          // In production, store this on-chain or off-chain
-          let category = 'Crypto';
+            category = 'Crypto';
+          }
 
           // Calculate end date from ending slot if available
           let endDate: Date | null = null;
@@ -195,8 +229,11 @@ export function useMarket(marketId: string | null) {
         // Get current slot for end date calculation
         const currentSlot = await connection.getSlot();
 
-        // Fetch creation time
-        const createdAt = await getAccountCreationTime(marketPubkey);
+        // Fetch creation time and metadata
+        const [createdAt, metadata] = await Promise.all([
+          getAccountCreationTime(marketPubkey),
+          data.yesTokenMint ? fetchTokenMetadata(data.yesTokenMint) : Promise.resolve(null)
+        ]);
 
         // Calculate prices
         const totalReserves = data.realYesSolReserves.toNumber() + data.realNoSolReserves.toNumber();
@@ -218,21 +255,48 @@ export function useMarket(marketId: string | null) {
         // Generate market identifier
         const marketIdShort = marketId.slice(0, 8);
 
-        // Generate descriptive question
-        let question: string;
-        if (hasYesToken && hasNoToken) {
-          question = `Binary Prediction Market ${marketIdShort}`;
-        } else {
-          question = `Prediction Market ${marketIdShort} (Tokens not initialized)`;
-        }
+        // Check if we have a custom title for this market
+        const marketTitleConfig = getMarketTitle(marketId);
 
-        // Create detailed description with token info
-        let description = `Market: ${marketId.slice(0, 8)}...${marketId.slice(-4)}`;
-        if (hasYesToken && hasNoToken) {
-          description += ` • YES: ${yesTokenStr.slice(0, 4)}...${yesTokenStr.slice(-4)}`;
-          description += ` • NO: ${noTokenStr.slice(0, 4)}...${noTokenStr.slice(-4)}`;
+        // Use configured title if available, otherwise use metadata or generic title
+        let question: string;
+        let description: string;
+        let categoryValue: string;
+
+        if (marketTitleConfig) {
+          // Use the configured market title
+          question = marketTitleConfig.question;
+          description = marketTitleConfig.description || `Market: ${marketIdShort}`;
+          categoryValue = marketTitleConfig.category || 'Crypto';
+        } else if (metadata && metadata.name) {
+          // Use the token metadata name as the market title
+          question = metadata.name.trim();
+
+          // Create description from metadata
+          description = `Market: ${marketIdShort}`;
+          if (hasYesToken && hasNoToken) {
+            description += ` • YES: ${metadata.symbol || yesTokenStr.slice(0, 4)}`;
+          }
+
+          categoryValue = 'Crypto';
+        } else {
+          // Generate generic title for markets without configuration or metadata
+          if (hasYesToken && hasNoToken) {
+            question = `Binary Prediction Market ${marketIdShort}`;
+          } else {
+            question = `Prediction Market ${marketIdShort} (Tokens not initialized)`;
+          }
+
+          // Create detailed description with token info
+          description = `Market: ${marketIdShort}...${marketId.slice(-4)}`;
+          if (hasYesToken && hasNoToken) {
+            description += ` • YES: ${yesTokenStr.slice(0, 4)}...${yesTokenStr.slice(-4)}`;
+            description += ` • NO: ${noTokenStr.slice(0, 4)}...${noTokenStr.slice(-4)}`;
+          }
+          description += ` • Supply: ${(data.tokenYesTotalSupply.toNumber() / 1e9).toFixed(0)}B`;
+
+          categoryValue = 'Crypto';
         }
-        description += ` • Supply: ${(data.tokenYesTotalSupply.toNumber() / 1e9).toFixed(0)}B`;
 
         // Calculate end date from ending slot
         let endDate: Date | null = null;
@@ -252,7 +316,7 @@ export function useMarket(marketId: string | null) {
           address: marketPubkey,
           question,
           description,
-          category: 'Crypto',
+          category: categoryValue,
           createdAt,
           endDate,
           volume,

@@ -220,16 +220,29 @@ export async function fetchTokenMetadata(mint: PublicKey): Promise<{ name: strin
     const metadataPDA = getMetadataPDA(mint);
     const accountInfo = await connection.getAccountInfo(metadataPDA);
 
-    if (!accountInfo) {
+    if (!accountInfo || !accountInfo.data) {
       return null;
     }
 
-    // Parse Metaplex metadata (simplified)
-    // Full parsing would require @metaplex-foundation/mpl-token-metadata
-    // For now, return null - implement full parsing when needed
-    // The structure is: key(1) + update_authority(32) + mint(32) + name(variable) + symbol(variable) + ...
+    // Parse Metaplex metadata manually
+    // Metadata structure: key(1) + update_authority(32) + mint(32) + data
+    // Data structure: name_len(4) + name + symbol_len(4) + symbol + uri_len(4) + uri + ...
 
-    return null; // Return null for now, will implement full parsing if needed
+    const data = accountInfo.data;
+    let offset = 1 + 32 + 32; // Skip key, update_authority, and mint
+
+    // Read name (first 4 bytes for length, then the string)
+    const nameLength = data.readUInt32LE(offset);
+    offset += 4;
+    const name = data.slice(offset, offset + nameLength).toString('utf8').replace(/\0/g, '');
+    offset += nameLength;
+
+    // Read symbol (first 4 bytes for length, then the string)
+    const symbolLength = data.readUInt32LE(offset);
+    offset += 4;
+    const symbol = data.slice(offset, offset + symbolLength).toString('utf8').replace(/\0/g, '');
+
+    return { name, symbol };
   } catch (error) {
     console.error('Error fetching token metadata:', error);
     return null;
@@ -284,7 +297,8 @@ export async function mintNoTokenRpc(
   provider: AnchorProvider,
   noTokenKeypair: Keypair,
   noSymbol: string,
-  noUri: string
+  noUri: string,
+  walletAdapter?: any
 ): Promise<string> {
   const program = getProgram(provider);
   const [globalConfig] = getGlobalConfigPDA();
@@ -306,6 +320,7 @@ export async function mintNoTokenRpc(
   });
 
   try {
+    // Build the transaction
     const tx = await program.methods
       .mintNoToken(noSymbol, noUri)
       .accounts({
@@ -332,16 +347,25 @@ export async function mintNoTokenRpc(
     tx.partialSign(noTokenKeypair);
 
     // Sign with wallet (this will prompt user)
-    const signedTx = await provider.wallet.signTransaction(tx);
+    // Use the wallet adapter directly if provided, otherwise fall back to provider.wallet
+    const wallet = walletAdapter || provider.wallet;
+    if (!wallet.signTransaction) {
+      throw new Error('Wallet does not support transaction signing');
+    }
+    const signedTx = await wallet.signTransaction(tx);
 
     // Send the fully signed transaction
     const signature = await provider.connection.sendRawTransaction(signedTx.serialize(), {
-      skipPreflight: true,
+      skipPreflight: false,
       preflightCommitment: 'confirmed',
     });
 
-    // Wait for confirmation
-    await provider.connection.confirmTransaction(signature, 'confirmed');
+    // Wait for confirmation using the new API
+    await provider.connection.confirmTransaction({
+      signature,
+      blockhash,
+      lastValidBlockHeight: (await provider.connection.getLatestBlockhash()).lastValidBlockHeight,
+    }, 'confirmed');
 
     return signature;
   } catch (error) {
@@ -406,7 +430,8 @@ export async function createMarketRpc(
   yesTokenKeypair: Keypair,
   noTokenMint: PublicKey,
   params: CreateMarketParams,
-  teamWallet: PublicKey
+  teamWallet: PublicKey,
+  walletAdapter?: any
 ): Promise<string> {
   const program = getProgram(provider);
   const [globalConfig] = getGlobalConfigPDA();
@@ -423,6 +448,7 @@ export async function createMarketRpc(
   );
 
   try {
+    // Build the transaction
     const tx = await program.methods
       .createMarket(params)
       .accounts({
@@ -453,16 +479,25 @@ export async function createMarketRpc(
     tx.partialSign(yesTokenKeypair);
 
     // Sign with wallet (this will prompt user)
-    const signedTx = await provider.wallet.signTransaction(tx);
+    // Use the wallet adapter directly if provided, otherwise fall back to provider.wallet
+    const wallet = walletAdapter || provider.wallet;
+    if (!wallet.signTransaction) {
+      throw new Error('Wallet does not support transaction signing');
+    }
+    const signedTx = await wallet.signTransaction(tx);
 
     // Send the fully signed transaction
     const signature = await provider.connection.sendRawTransaction(signedTx.serialize(), {
-      skipPreflight: true,
+      skipPreflight: false,
       preflightCommitment: 'confirmed',
     });
 
-    // Wait for confirmation
-    await provider.connection.confirmTransaction(signature, 'confirmed');
+    // Wait for confirmation using the new API
+    await provider.connection.confirmTransaction({
+      signature,
+      blockhash,
+      lastValidBlockHeight: (await provider.connection.getLatestBlockhash()).lastValidBlockHeight,
+    }, 'confirmed');
 
     return signature;
   } catch (error) {

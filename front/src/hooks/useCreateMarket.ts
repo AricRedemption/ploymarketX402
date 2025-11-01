@@ -76,11 +76,12 @@ export function useCreateMarket() {
           provider,
           noTokenMint,
           noSymbol,
-          '' // Empty URI for now
+          '', // Empty URI for now
+          wallet // Pass the wallet adapter directly
         );
 
         console.log('NO token transaction sent:', noTokenSignature);
-        await connection.confirmTransaction(noTokenSignature, 'confirmed');
+        // Transaction is already confirmed by mintNoTokenRpc
         console.log('NO token minted successfully');
 
         console.log('Step 2: Creating market...');
@@ -99,11 +100,12 @@ export function useCreateMarket() {
           yesTokenMint, // Pass the Keypair for YES token
           noTokenMint.publicKey, // Pass the PublicKey for NO token (already minted)
           params,
-          teamWallet
+          teamWallet,
+          wallet // Pass the wallet adapter directly
         );
 
         console.log('Market creation transaction sent:', signature);
-        await connection.confirmTransaction(signature, 'confirmed');
+        // Transaction is already confirmed by createMarketRpc
       } catch (txError: any) {
         console.error('Transaction error details:', txError);
         if (txError.logs) {
